@@ -1,0 +1,30 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "komikhq-media-pages",
+  "pages_build_output_dir": "./public",
+  "compatibility_date": "2026-10-09",
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "replace-with-local-r2-bucket"
+    }
+  ],
+  "env": {
+    "preview": {
+      "r2_buckets": [
+        {
+          "binding": "MEDIA_BUCKET",
+          "bucket_name": "replace-with-preview-r2-bucket"
+        }
+      ]
+    },
+    "production": {
+      "r2_buckets": [
+        {
+          "binding": "MEDIA_BUCKET",
+          "bucket_name": "replace-with-production-r2-bucket"
+        }
+      ]
+    }
+  }
+}

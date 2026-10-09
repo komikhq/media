@@ -1,0 +1,163 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { handleMediaRequest, objectKeyFromPath } from "../src/index.ts";
+
+test("maps root and URL-encoded paths to object keys", () => {
+  assert.equal(objectKeyFromPath("/"), "index.html");
+  assert.equal(objectKeyFromPath("/chapters/one/page%201.webp"), "chapters/one/page 1.webp");
+});
+
+test("rejects malformed, ambiguous, and traversing paths", () => {
+  for (const path of [
+    "",
+    "chapter/page.webp",
+    "/../private.jpg",
+    "/%2e%2e/private.jpg",
+    "/chapter//page.webp",
+    "/chapter/",
+    "/chapter%2Fpage.webp",
+    "/chapter%5Cpage.webp",
+    "/bad%ZZ",
+    "/control%00char",
+  ]) {
+    assert.equal(objectKeyFromPath(path), null, `expected ${path} to be rejected`);
+  }
+});
+
+function makeObject(body = "image bytes") {
+  const encoded = new TextEncoder().encode(body);
+  return {
+    body: new ReadableStream({
+      start(controller) {
+        controller.enqueue(encoded);
+        controller.close();
+      },
+    }),
+    size: encoded.byteLength,
+    httpEtag: '"media-etag"',
+    uploaded: new Date("2026-09-01T12:34:56.000Z"),
+    writeHttpMetadata(headers) {
+      headers.set("Content-Type", "image/webp");
+      headers.set("Content-Language", "en");
+    },
+  };
+}
+
+test("GET streams the object with metadata and cache headers", async () => {
+  const object = makeObject();
+  const calls = [];
+  const bucket = {
+    async get(key) {
+      calls.push(["get", key]);
+      return object;
+    },
+    async head(key) {
+      calls.push(["head", key]);
+      return object;
+    },
+  };
+
+  const response = await handleMediaRequest(
+    new Request("https://media.example/chapters/one/page.webp?download=1"),
+    bucket,
+  );
+
+  assert.deepEqual(calls, [["get", "chapters/one/page.webp"]]);
+  assert.equal(await response.text(), "image bytes");
+  assert.equal(response.headers.get("Content-Type"), "image/webp");
+  assert.equal(response.headers.get("Content-Language"), "en");
+  assert.equal(response.headers.get("ETag"), '"media-etag"');
+  assert.equal(response.headers.get("Last-Modified"), "Tue, 01 Sep 2026 12:34:56 GMT");
+  assert.equal(response.headers.get("Content-Length"), "11");
+  assert.equal(
+    response.headers.get("Cache-Control"),
+    "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",
+  );
+});
+
+test("HEAD returns object metadata without requesting a body", async () => {
+  const object = makeObject();
+  const calls = [];
+  const bucket = {
+    async get(key) {
+      calls.push(["get", key]);
+      return object;
+    },
+    async head(key) {
+      calls.push(["head", key]);
+      return object;
+    },
+  };
+
+  const response = await handleMediaRequest(
+    new Request("https://media.example/cover.webp", { method: "HEAD" }),
+    bucket,
+  );
+
+  assert.deepEqual(calls, [["head", "cover.webp"]]);
+  assert.equal(response.status, 200);
+  assert.equal(response.body, null);
+  assert.equal(response.headers.get("Content-Length"), "11");
+});
+
+test("unsupported methods return 405 with Allow and never access R2", async () => {
+  const response = await handleMediaRequest(
+    new Request("https://media.example/cover.webp", { method: "POST" }),
+    {
+      async get() {
+        assert.fail("POST must not access R2");
+      },
+      async head() {
+        assert.fail("POST must not access R2");
+      },
+    },
+  );
+
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get("Allow"), "GET, HEAD");
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+});
+
+test("invalid paths return 400 and missing objects return 404", async () => {
+  const calls = [];
+  const bucket = {
+    async get(key) {
+      calls.push(key);
+      return null;
+    },
+    async head(key) {
+      calls.push(key);
+      return null;
+    },
+  };
+
+  const invalid = await handleMediaRequest(
+    new Request("https://media.example/chapter%2Fpage.webp"),
+    bucket,
+  );
+  const missing = await handleMediaRequest(
+    new Request("https://media.example/not-found.webp"),
+    bucket,
+  );
+
+  assert.equal(invalid.status, 400);
+  assert.equal(invalid.headers.get("Cache-Control"), "no-store");
+  assert.equal(missing.status, 404);
+  assert.equal(missing.headers.get("Cache-Control"), "no-store");
+  assert.deepEqual(calls, ["not-found.webp"]);
+});
+
+test("R2 read failures propagate instead of becoming success responses", async () => {
+  const failure = new Error("R2 unavailable");
+  await assert.rejects(
+    handleMediaRequest(new Request("https://media.example/cover.webp"), {
+      async get() {
+        throw failure;
+      },
+      async head() {
+        throw failure;
+      },
+    }),
+    failure,
+  );
+});

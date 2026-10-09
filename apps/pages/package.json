@@ -1,0 +1,17 @@
+{
+  "name": "@komikhq/pages",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@komikhq/media-core": "workspace:*"
+  },
+  "scripts": {
+    "types": "wrangler types --path=functions/types.d.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "wrangler pages functions build functions",
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public",
+    "deploy:preview": "wrangler pages deploy public --branch preview"
+  }
+}
