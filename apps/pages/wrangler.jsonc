@@ -6,7 +6,7 @@
   "r2_buckets": [
     {
       "binding": "MEDIA_BUCKET",
-      "bucket_name": "replace-with-local-r2-bucket"
+      "bucket_name": "komikhq-media"
     }
   ],
   "env": {
@@ -14,7 +14,7 @@
       "r2_buckets": [
         {
           "binding": "MEDIA_BUCKET",
-          "bucket_name": "replace-with-preview-r2-bucket"
+          "bucket_name": "komikhq-media-preview"
         }
       ]
     },
@@ -22,7 +22,7 @@
       "r2_buckets": [
         {
           "binding": "MEDIA_BUCKET",
-          "bucket_name": "replace-with-production-r2-bucket"
+          "bucket_name": "komikhq-media"
         }
       ]
     }
