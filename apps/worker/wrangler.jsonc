@@ -17,8 +17,8 @@
   "r2_buckets": [
     {
       "binding": "MEDIA_BUCKET",
-      "bucket_name": "replace-with-production-r2-bucket",
-      "preview_bucket_name": "local-media-production-simulation",
+      "bucket_name": "komikhq-media",
+      "preview_bucket_name": "komikhq-media-preview",
       "remote": false
     }
   ],
