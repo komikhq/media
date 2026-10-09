@@ -118,6 +118,82 @@ test("unsupported methods return 405 with Allow and never access R2", async () =
   assert.equal(response.headers.get("Cache-Control"), "no-store");
 });
 
+test("browser errors return the branded HTML page with a safe Ray ID", async () => {
+  const response = await handleMediaRequest(
+    new Request("https://media.example/not-found.webp", {
+      headers: {
+        Accept: "text/html",
+        "cf-ray": 'ray-<script>alert("x")</script>',
+      },
+    }),
+    {
+      async get() {
+        return null;
+      },
+      async head() {
+        return null;
+      },
+    },
+  );
+
+  const html = await response.text();
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get("Content-Type"), "text/html; charset=utf-8");
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  assert.match(html, /We could not find that media/u);
+  assert.match(html, /HTTP 404/u);
+  assert.match(html, /ray-&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/u);
+  assert.doesNotMatch(html, /<script>alert/u);
+  assert.match(html, /prefers-color-scheme: dark/u);
+  assert.match(html, /<svg/u);
+});
+
+test("browser method errors return the branded page and preserve Allow", async () => {
+  const response = await handleMediaRequest(
+    new Request("https://media.example/cover.webp", {
+      method: "POST",
+      headers: { Accept: "text/html" },
+    }),
+    {
+      async get() {
+        assert.fail("unsupported methods must not access R2");
+      },
+      async head() {
+        assert.fail("unsupported methods must not access R2");
+      },
+    },
+  );
+
+  assert.equal(response.status, 405);
+  assert.equal(response.headers.get("Allow"), "GET, HEAD");
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  assert.match(await response.text(), /This request method is not supported/u);
+});
+
+test("non-browser errors return JSON and preserve request IDs", async () => {
+  const response = await handleMediaRequest(
+    new Request("https://media.example/not-found.webp", {
+      headers: { Accept: "application/json", "cf-ray": "ray-id-123" },
+    }),
+    {
+      async get() {
+        return null;
+      },
+      async head() {
+        return null;
+      },
+    },
+  );
+
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get("Content-Type"), "application/json; charset=utf-8");
+  assert.deepEqual(await response.json(), {
+    error: "NOT_FOUND",
+    message: "The file may have moved, or the address may be incorrect.",
+    requestId: "ray-id-123",
+  });
+});
+
 test("invalid paths return 400 and missing objects return 404", async () => {
   const calls = [];
   const bucket = {
@@ -147,17 +223,37 @@ test("invalid paths return 400 and missing objects return 404", async () => {
   assert.deepEqual(calls, ["not-found.webp"]);
 });
 
-test("R2 read failures propagate instead of becoming success responses", async () => {
+test("R2 read failures return a generic, non-cacheable 500 and log the failure", async () => {
   const failure = new Error("R2 unavailable");
-  await assert.rejects(
-    handleMediaRequest(new Request("https://media.example/cover.webp"), {
-      async get() {
-        throw failure;
+  const originalConsoleError = console.error;
+  const logs = [];
+  console.error = (...args) => logs.push(args);
+  try {
+    const response = await handleMediaRequest(
+      new Request("https://media.example/cover.webp", {
+        headers: { Accept: "application/json", "cf-ray": "ray-error-456" },
+      }),
+      {
+        async get() {
+          throw failure;
+        },
+        async head() {
+          throw failure;
+        },
       },
-      async head() {
-        throw failure;
-      },
-    }),
-    failure,
-  );
+    );
+
+    assert.equal(response.status, 500);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    assert.deepEqual(await response.json(), {
+      error: "INTERNAL_ERROR",
+      message: "Something went wrong while retrieving the file. Please try again shortly.",
+      requestId: "ray-error-456",
+    });
+    assert.equal(logs.length, 1);
+    assert.equal(logs[0][0], "Media delivery failed");
+    assert.equal(logs[0][1].error, failure);
+  } finally {
+    console.error = originalConsoleError;
+  }
 });

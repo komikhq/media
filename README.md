@@ -8,6 +8,10 @@ This pnpm workspace serves read-only media from R2 through two separate deployme
 
 Both targets expose the same URL-to-object mapping. `/` resolves to the R2 key `index.html`; other valid paths map to their decoded, slash-separated object keys. Query strings do not affect the key.
 
+Browser requests that accept HTML receive a branded, responsive error page for delivery errors; other clients receive a JSON error object. The shared page uses Lucide icons, follows the operating system's light/dark preference, and displays the Cloudflare Ray ID when available. These application responses cover media delivery errors (400, 404, 405, and R2 failures); Cloudflare edge or platform errors that occur before the application runs require separate Cloudflare error-page configuration.
+
+Favicon, app icon, and logo files from `komikhq-astro/public` are copied into each target's public asset directory. `images/` and `robots.txt` are intentionally excluded. Pages excludes these static routes from its catch-all Function in `apps/pages/public/_routes.json`, and the Worker serves them through its static asset binding.
+
 ## Setup and checks
 
 Use the pinned pnpm version (`12.10.1`):

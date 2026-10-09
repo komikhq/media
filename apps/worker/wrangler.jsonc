@@ -4,6 +4,13 @@
   "name": "komikhq-media-worker",
   // The module entry point that Wrangler bundles and deploys.
   "main": "src/index.ts",
+  // Serve the Worker app's static brand and favicon files before media handling.
+  "assets": {
+    // Directory containing the static files deployed with this Worker.
+    "directory": "./public",
+    // Keep matching static files out of the R2 delivery handler.
+    "binding": "ASSETS"
+  },
   // The runtime compatibility date used to select Workers platform behavior.
   "compatibility_date": "2026-10-09",
   // Enable the public <name>.<account-subdomain>.workers.dev route.
@@ -50,7 +57,7 @@
         // Match the binding name referenced by the Worker code.
         "binding": "MEDIA_BUCKET",
         // The R2 bucket used by Workers Builds Previews; replace for your account.
-        "bucket_name": "replace-with-preview-r2-bucket"
+        "bucket_name": "komikhq-media-preview",
       }
     ],
     // Enable Workers Cache for branch previews as well.
@@ -69,9 +76,9 @@
           // Keep the binding name consistent with the Worker source code.
           "binding": "MEDIA_BUCKET",
           // The remote preview bucket used when this named environment is deployed.
-          "bucket_name": "replace-with-preview-r2-bucket",
+          "bucket_name": "komikhq-media-preview",
           // The local simulation name for this named environment.
-          "preview_bucket_name": "local-media-preview-simulation",
+          "preview_bucket_name": "komikhq-media-preview",
           // Keep local Wrangler development isolated from remote R2.
           "remote": false
         }
