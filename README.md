@@ -40,6 +40,8 @@ No production deployment, DNS/domain setup, or Cloudflare resource provisioning 
 
 ## CDN caching and invalidation
 
-Successful object responses carry `Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`. Error responses are marked `no-store`. The Worker/Pages Function and these headers alone do not guarantee that Cloudflare's global CDN caches the response. Configure and verify a Cache Rule for the eventual public hostname and media paths so it honors the response cache policy.
+Successful object responses carry `Cache-Control: public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800`. Error responses are marked `no-store`.
 
-If an object is overwritten at the same key, purge that URL through Cloudflare's cache before expecting all cached copies to update. Prefer versioned object paths for immutable releases; keep the purge procedure available for mutable keys. No cache purge integration is provisioned here.
+The standalone Worker enables Workers Cache in Wrangler; Workers Cache honors these response headers and is separate from the zone cache. Zone Cache Rules do not control Workers Cache. Pages does not use the Worker `cache` setting, so Pages caching must be configured separately and verified for the public hostname and media paths.
+
+If an object is overwritten at the same key, invalidate the applicable cache before expecting all cached copies to update. Prefer versioned object paths for immutable releases; no cache purge integration is provisioned here.

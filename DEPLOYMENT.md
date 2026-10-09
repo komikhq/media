@@ -104,6 +104,8 @@ pnpm --filter @komikhq/worker exec wrangler deploy --dry-run --env preview
 
 The preview deployment is a separate named Worker, not an automatic copy of production settings. The R2 binding is explicitly defined for it in Wrangler config.
 
+The Worker config enables the `workers.dev` route, version Preview URLs, and Workers Cache. These are Worker-specific settings; they do not configure Pages. Workers Cache is private to this Worker, honors response `Cache-Control`, and is not controlled by zone Cache Rules. Pages uses its own caching configuration.
+
 ## 6. Import this monorepo from GitHub
 
 You can connect the same GitHub repository to a Pages project and a separate Worker. They are independent Cloudflare projects and can each deploy automatically on pushes. Cloudflare Pages Git integration and Workers Builds are configured separately.
@@ -149,7 +151,7 @@ The build command compiles the shared workspace package and verifies the Pages F
 
 Configure a KomikHQ-controlled public hostname for the selected Pages project or Worker. For Pages subdomains, register the hostname in the Pages project and configure its required DNS CNAME at the DNS provider. An apex hostname requires the domain's zone and nameservers to be on Cloudflare in the account that owns the Pages project.
 
-Do not use an R2 `r2.dev` URL or an R2 custom-domain endpoint as the public media URL. The response `Cache-Control` headers are set in the shared package, but they do not by themselves guarantee global CDN caching. Configure and verify a Cloudflare Cache Rule for the public hostname and media paths. Purge the relevant URL after replacing an object at the same key; immutable, versioned paths avoid that invalidation step for new releases.
+Do not use an R2 `r2.dev` URL or an R2 custom-domain endpoint as the public media URL. The Worker uses Workers Cache and response `Cache-Control` headers; Cloudflare zone Cache Rules do not control that cache. Pages does not use the Worker's cache setting, so configure and verify Pages caching separately for the public hostname and media paths. Invalidate the applicable cache after replacing an object at the same key; immutable, versioned paths avoid that invalidation step for new releases.
 
 ## Cloudflare references
 
