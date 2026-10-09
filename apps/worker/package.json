@@ -9,10 +9,12 @@
   "scripts": {
     "types": "wrangler types",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "generate:deploy-config": "node scripts/generate-deploy-config.mjs",
     "build": "wrangler deploy --dry-run --env=\"\"",
     "dev": "wrangler dev",
     "dev:preview": "wrangler dev --env preview",
-    "deploy": "wrangler deploy --env=\"\"",
-    "deploy:preview": "wrangler deploy --env preview"
+    "deploy:branch-preview": "pnpm generate:deploy-config && wrangler preview --config wrangler.deploy.jsonc",
+    "deploy": "pnpm generate:deploy-config && wrangler deploy --config wrangler.deploy.jsonc --env=\"\"",
+    "deploy:preview": "pnpm generate:deploy-config && wrangler deploy --config wrangler.deploy.jsonc --env preview"
   }
 }

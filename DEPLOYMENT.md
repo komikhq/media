@@ -20,7 +20,7 @@ The Pages project and standalone Worker are independent deployments. Both use th
    pnpm exec wrangler whoami
    ```
 
-3. Create or select the R2 bucket(s) in that account. The config placeholders are syntactically valid examples, not resources that this project creates. Replace the relevant `bucket_name` values in [Pages Wrangler config](./apps/pages/wrangler.jsonc) and [Worker Wrangler config](./apps/worker/wrangler.jsonc).
+3. Create or select the R2 buckets in that account. The tracked Wrangler files are templates/local-development configuration; production bucket names are selected independently for each Pages or Worker project using one of the options below.
 
 4. Keep the binding named `MEDIA_BUCKET`. The Worker uses Wrangler named environments; Workers bindings are not inherited automatically, so each environment has its own R2 binding in the config.
 
@@ -60,49 +60,94 @@ The Pages command uses the base binding configuration for local development; Pag
 
 ## 4. Deploy Cloudflare Pages
 
-Pages Functions run inside a Cloudflare Pages project. Create/select the Pages project in Cloudflare first, and make sure it uses the Pages V2 build system because this project defines its configuration in Wrangler. The Wrangler configuration is the source of truth for fields it defines; do not maintain conflicting dashboard values for those fields.
+Pages Functions run inside a Cloudflare Pages project. Create/select the Pages project in Cloudflare first. The Dashboard-managed binding option leaves the tracked Wrangler file local-only; the generated-config option requires Pages Build System V2 or later and makes the generated Wrangler file the source of truth for fields it defines.
 
-1. In [Pages Wrangler config](./apps/pages/wrangler.jsonc), set `env.production.r2_buckets[].bucket_name` and `env.preview.r2_buckets[].bucket_name`. These may point to different buckets; both may point to the production bucket if that is intentional.
-2. Set the Pages project name (`name`) to the project configured in Cloudflare if it differs from `komikhq-media-pages`.
-3. Deploy from the configured production branch:
+Choose one configuration method for each Pages project:
 
-   ```sh
-   pnpm deploy:pages
-   ```
+### Option A: Dashboard-managed binding (recommended for many projects)
 
-   Wrangler infers the branch from Git when available. For an explicit branch, use:
+The tracked [Pages Wrangler config](./apps/pages/wrangler.jsonc) intentionally omits `pages_build_output_dir`, so it is used for local development only. In the Pages project Dashboard, add the `MEDIA_BUCKET` R2 binding separately for **Production** and **Preview**. This lets multiple Pages projects use the same Git repository while binding each project to its own bucket. Do not add `pages_build_output_dir` to the tracked file when using this option; that opts the project into Wrangler-managed deployment configuration.
 
-   ```sh
-   pnpm --filter @komikhq/pages exec wrangler pages deploy public --branch <production-branch>
-   ```
+Keep the Pages project build settings at **Root directory** `apps/pages`, **Build output directory** `public`, and use the normal build command:
 
-4. Deploy a preview using a branch configured as a Pages preview branch:
+```sh
+pnpm --filter @komikhq/media-core build && pnpm --filter @komikhq/pages build
+```
 
-   ```sh
-   pnpm deploy:pages:preview
-   ```
+### Option B: Wrangler-config-managed binding
 
-   This script uses branch name `preview`. If your Pages project uses another branch, either change that branch in [the Pages package scripts](./apps/pages/package.json) or run the explicit `wrangler pages deploy public --branch <preview-branch>` command shown above.
+Use this when you want the project configuration and bucket names generated from build variables rather than entered as Dashboard bindings. Set these build variables separately in each Pages project:
 
-Pages selects its `env.production` or `env.preview` override according to whether the deployment branch is the configured production branch or a preview branch. Preview branch settings are configured in the Pages project; the `--branch` flag identifies the branch, it does not create that Pages project or its branch policy.
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DEPLOY_PAGES_PROJECT_NAME` | Yes | Must match the Pages project name |
+| `DEPLOY_R2_BUCKET_NAME` | Yes | Production R2 bucket |
+| `DEPLOY_R2_PREVIEW_BUCKET_NAME` | Yes | Preview R2 bucket; keep separate from production unless sharing is intentional |
+
+Use this Pages **Build command**:
+
+```sh
+pnpm --filter @komikhq/pages generate:deploy-config && pnpm --filter @komikhq/media-core build && pnpm --filter @komikhq/pages build
+```
+
+The generator writes the Pages deployment configuration into `apps/pages/wrangler.jsonc` in that build checkout before Pages processes the deployment. The generated config includes `pages_build_output_dir`, the project name, and production/preview bindings; Wrangler config becomes the source of truth for those settings. The rewrite only happens in the Cloudflare build checkout and must not be committed to Git. Configure variables in both Pages build environments so the generation step has access to the values it needs.
+
+Do **not** use `--config` with `wrangler pages deploy`: Wrangler 4.149.0's Pages deploy command does not accept that flag. For Pages Git integration, use the generated standard `wrangler.jsonc` as above; the Wrangler CLI discovers it automatically. The Worker CLI command is different and does accept `--config`.
+
+Do not combine this option with Dashboard-managed `MEDIA_BUCKET` bindings. Choose Dashboard bindings **or** the generated Wrangler config as the source of truth for the Pages project.
+
+### Deploy Pages manually with Wrangler
+
+For a Pages project managed through the Dashboard, deploy the already-built `public` directory:
+
+```sh
+pnpm deploy:pages
+```
+
+Wrangler infers the branch from Git when available. For an explicit branch, use:
+
+```sh
+pnpm --filter @komikhq/pages exec wrangler pages deploy public --branch <production-branch>
+```
+
+Deploy a preview using a branch configured as a Pages preview branch:
+
+```sh
+pnpm deploy:pages:preview
+```
+
+This script uses branch name `preview`. If your Pages project uses another branch, either change that branch in [the Pages package scripts](./apps/pages/package.json) or run the explicit `wrangler pages deploy public --branch <preview-branch>` command shown above.
+
+When using Wrangler-managed config for a manual deployment, run the generator first in the same build checkout with the variables above. Pages selects its `env.production` or `env.preview` override according to whether the deployment branch is the configured production branch or a preview branch. Preview branch settings are configured in the Pages project; the `--branch` flag identifies the branch, it does not create that Pages project or its branch policy.
 
 ## 5. Deploy the standalone Worker
 
-The Worker has its own name, bindings, URL, and deployment lifecycle. In [Worker Wrangler config](./apps/worker/wrangler.jsonc), set the top-level bucket to production and `env.preview.r2_buckets[].bucket_name` to the preview bucket (or intentionally reuse production).
+The Worker has its own name, bindings, URL, and deployment lifecycle. Keep [Worker Wrangler config](./apps/worker/wrangler.jsonc) as the tracked template/local-development config. Its deploy script generates the ignored `wrangler.deploy.jsonc` from per-project `DEPLOY_*` variables and passes that file to Wrangler with `--config`.
+
+Set these variables for each Worker project:
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DEPLOY_WORKER_NAME` | Yes | Production Worker name; must match the Cloudflare Worker project |
+| `DEPLOY_R2_BUCKET_NAME` | Yes | Production R2 bucket |
+| `DEPLOY_R2_PREVIEW_BUCKET_NAME` | Yes | Branch Preview and named preview R2 bucket; keep separate from production unless sharing is intentional |
+| `DEPLOY_WORKER_PREVIEW_NAME` | No | Named preview Worker name; defaults to `<DEPLOY_WORKER_NAME>-preview` |
+
+For Workers Builds, keep the Worker root directory at `apps/worker`, build with the existing shared-package build step, and set the **Deploy command** to `pnpm run deploy`. That command generates the per-project config and deploys production. Branch previews use the Worker Builds Preview workflow and the generated preview bucket binding. The separate manual `pnpm deploy:worker:preview` command deploys the named `env.preview` Worker using the same generated config.
 
 ```sh
 pnpm deploy:worker
 pnpm deploy:worker:preview
 ```
 
-The first command explicitly deploys the top-level Worker environment; the second deploys the separate `komikhq-media-worker-preview` environment. A dry run can validate either configuration without publishing:
+The first command explicitly deploys the top-level Worker environment; the second deploys the separately named preview Worker. A dry run can validate the template config without publishing:
 
 ```sh
 pnpm --filter @komikhq/worker exec wrangler deploy --dry-run --env=""
 pnpm --filter @komikhq/worker exec wrangler deploy --dry-run --env preview
 ```
 
-The preview deployment is a separate named Worker, not an automatic copy of production settings. The R2 binding is explicitly defined for it in Wrangler config.
+The preview deployment is a separate named Worker, not an automatic copy of production settings. The generator explicitly sets its name and R2 binding.
 
 The Worker config enables the `workers.dev` route, version Preview URLs, and Workers Cache. These are Worker-specific settings; they do not configure Pages. Workers Cache is private to this Worker, honors response `Cache-Control`, and is not controlled by zone Cache Rules. Pages uses its own caching configuration.
 
@@ -116,10 +161,10 @@ You can connect the same GitHub repository to a Pages project and a separate Wor
 2. Set the **Production branch** (usually `main`).
 3. Under **Build settings**, set:
    - **Root directory**: `apps/pages`
-   - **Build command**: `pnpm --filter @komikhq/media-core build && pnpm --filter @komikhq/pages build`
+   - **Build command**: use the Dashboard-managed or generated-config command in Section 4
    - **Build output directory**: `public`
    - **Framework preset**: none
-4. Ensure the project uses Pages Build System V2 or later. The Wrangler config in `apps/pages` is the source of truth for the settings and R2 bindings it declares. Set the preview and production bucket names in [the Pages Wrangler config](./apps/pages/wrangler.jsonc) before connecting/deploying.
+4. Choose either the Dashboard-managed binding method or generated Wrangler-config method described in Section 4. Build System V2 or later is required for the generated-config method. Do not set a shared production bucket in the tracked Pages config.
 5. Save and deploy. Pushes to the production branch create production deployments; other enabled branches and pull requests create Pages previews. Configure **Settings** > **Builds & deployments** > **Branch control** to choose which branches may create previews.
 
 The build command compiles the shared workspace package and verifies the Pages Functions bundle. The Functions files stay in `apps/pages/functions`, while `public` is the Pages assets output directory. Keep the entire repository available to the build; the shared package and pnpm workspace files are outside the Pages root directory.
@@ -136,9 +181,9 @@ Media delivery errors are generated by the shared package: browser requests that
    - **Production branch**: usually `main`
    - **Build command**: `pnpm --filter @komikhq/media-core build`
    - **Deploy command**: `pnpm run deploy`
-   - **Preview command**: `pnpm exec wrangler preview`
-3. Make the Worker name in Cloudflare match `name` in [the Worker Wrangler config](./apps/worker/wrangler.jsonc), currently `komikhq-media-worker`. Set its production bucket there before enabling production builds.
-4. For branch previews, configure the preview R2 binding with a test bucket in the `previews` block of the Wrangler config. Previews use branch-oriented Workers Previews settings; they do **not** automatically select the named Wrangler `env.preview`. The repository config includes a placeholder `previews.r2_buckets` binding that must be changed to the intended preview bucket.
+   - **Preview command**: `pnpm run deploy:branch-preview`
+3. Configure the required `DEPLOY_*` variables above for this Worker project. The generator sets the Worker name and R2 bindings for production, branch Previews, and the named preview environment.
+4. Branch previews use branch-oriented Workers Previews settings; they do **not** automatically select the named Wrangler `env.preview`. Both use the bucket supplied as `DEPLOY_R2_PREVIEW_BUCKET_NAME`.
 5. Enable preview builds and select the production branch in the Worker Builds settings. Production-branch pushes deploy the Worker; non-production branch builds use the Preview command and create/update a branch Preview. Preview URLs are public unless you separately restrict access.
 
 `pnpm deploy:worker:preview` is different: it manually deploys the named Wrangler environment `env.preview` as its own Worker. Do not set that script as the Workers Builds Preview command unless you specifically intend each preview build to deploy/update that named Worker instead of using branch-isolated Previews.

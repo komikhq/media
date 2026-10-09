@@ -7,6 +7,7 @@ node_modules/
 # Wrangler-generated output
 apps/pages/_worker.bundle
 apps/pages/functions/types.d.ts
+apps/worker/wrangler.deploy.jsonc
 apps/worker/worker-configuration.d.ts
 *.tsbuildinfo
 

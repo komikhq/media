@@ -32,6 +32,7 @@
   "type": "module",
   "devDependencies": {
     "@types/node": "^24.0.0",
+    "jsonc-parser": "^3.3.1",
     "typescript": "^5.9.3",
     "wrangler": "^4.149.0"
   }

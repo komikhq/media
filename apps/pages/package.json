@@ -9,6 +9,7 @@
   "scripts": {
     "types": "wrangler types --path=functions/types.d.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "generate:deploy-config": "node scripts/generate-deploy-config.mjs",
     "build": "wrangler pages functions build functions",
     "dev": "wrangler pages dev public",
     "deploy": "wrangler pages deploy public",
