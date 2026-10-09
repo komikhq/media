@@ -9,7 +9,7 @@
   "scripts": {
     "types": "wrangler types",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "generate:deploy-config": "node scripts/generate-deploy-config.mjs",
+    "generate:deploy-config": "tsx scripts/generate-deploy-config.ts",
     "build": "wrangler deploy --dry-run --env=\"\"",
     "dev": "wrangler dev",
     "dev:preview": "wrangler dev --env preview",

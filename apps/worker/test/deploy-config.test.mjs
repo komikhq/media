@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { parse } from "jsonc-parser";
-import { buildDeployConfig } from "../scripts/generate-deploy-config.mjs";
+import { buildDeployConfig } from "../scripts/generate-deploy-config.ts";
 
 const source = await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8");
 

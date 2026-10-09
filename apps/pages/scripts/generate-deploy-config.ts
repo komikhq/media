@@ -1,12 +1,30 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
-import { parse, printParseErrorCode } from "jsonc-parser";
+import { parse, printParseErrorCode, type ParseError } from "jsonc-parser";
+
+interface R2Binding {
+  binding: string;
+  bucket_name: string;
+}
+
+interface PagesEnvironment {
+  r2_buckets?: R2Binding[];
+}
+
+interface PagesConfig {
+  name: string;
+  pages_build_output_dir?: string;
+  r2_buckets?: R2Binding[];
+  env?: Record<string, PagesEnvironment>;
+}
+
+type DeployEnvironment = Record<string, string | undefined>;
 
 const configPath = new URL("../wrangler.jsonc", import.meta.url);
 
-function parseConfig(source) {
-  const errors = [];
-  const config = parse(source, errors, { allowTrailingComma: true });
+function parseConfig(source: string): PagesConfig {
+  const errors: ParseError[] = [];
+  const config = parse(source, errors, { allowTrailingComma: true }) as PagesConfig;
   if (errors.length) {
     const details = errors
       .map((error) => `${printParseErrorCode(error.error)} at offset ${error.offset}`)
@@ -16,7 +34,7 @@ function parseConfig(source) {
   return config;
 }
 
-function requiredEnv(env, name) {
+function requiredEnv(env: DeployEnvironment, name: string): string {
   const value = env[name]?.trim();
   if (!value) {
     throw new Error(`Missing required deployment variable ${name}`);
@@ -24,7 +42,11 @@ function requiredEnv(env, name) {
   return value;
 }
 
-function findBinding(config, environment, binding) {
+function findBinding(
+  config: PagesConfig,
+  environment: "default" | "production" | "preview",
+  binding: string,
+): R2Binding {
   const bindings =
     environment === "default"
       ? config.r2_buckets
@@ -38,7 +60,10 @@ function findBinding(config, environment, binding) {
   return entry;
 }
 
-export function buildDeployConfig(source, env) {
+export function buildDeployConfig(
+  source: string,
+  env: DeployEnvironment,
+): string {
   const config = parseConfig(source);
   const projectName = requiredEnv(env, "DEPLOY_PAGES_PROJECT_NAME");
   const productionBucket = requiredEnv(env, "DEPLOY_R2_BUCKET_NAME");
@@ -53,7 +78,7 @@ export function buildDeployConfig(source, env) {
   return `${JSON.stringify(config, null, 2)}\n`;
 }
 
-async function main() {
+async function main(): Promise<void> {
   const source = await readFile(configPath, "utf8");
   const output = buildDeployConfig(source, process.env);
   await writeFile(configPath, output, "utf8");
