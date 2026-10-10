@@ -83,7 +83,7 @@ Choose either runtime—or deploy both. They use the same request handling and R
   </tr>
 </table>
 
-Browser error pages are server-rendered with React and the shared shadcn UI package, including its theme tokens and light/dark colors. They show the Cloudflare request ID when available. The page handles application-level delivery errors; Cloudflare edge or platform errors that occur before the app runs need separate Cloudflare error-page configuration.
+Browser error pages are server-rendered with React and the shared shadcn UI package, including its theme tokens and light/dark colors. Visitors can select light, dark, or system theme; the preference is stored in the browser, follows system changes, and can be toggled with **D**. Error pages show the Cloudflare request ID when available. The page handles application-level delivery errors; Cloudflare edge or platform errors that occur before the app runs need separate Cloudflare error-page configuration.
 
 ## Workspace map
 

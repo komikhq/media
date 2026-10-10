@@ -307,9 +307,9 @@ test("browser errors return the branded HTML page with a safe Ray ID", async () 
   assert.equal(response.headers.get("Cache-Control"), "no-store");
   assert.match(html, /We could not find that media/u);
   assert.match(html, /HTTP 404 · NOT_FOUND/u);
-  assert.match(html, /ray-&lt;script&gt;alert\("x"\)&lt;\/script&gt;/u);
+  assert.match(html, /ray-&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;/u);
   assert.doesNotMatch(html, /<script>alert/u);
-  assert.match(html, /prefers-color-scheme: dark/u);
+  assert.match(html, /prefers-color-scheme:\s*dark/u);
   assert.match(html, /--background:/u);
   assert.match(html, /bg-background/u);
   assert.match(html, /data-slot="separator"/u);
