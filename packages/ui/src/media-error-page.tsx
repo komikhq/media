@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "./components/card";
 import { Separator } from "./components/separator";
-import { Button } from "./components/button";
 import { THEME_PROVIDER_SCRIPT } from "./lib/theme-provider-script";
 import uiStyles from "./styles/theme.css?inline";
 
@@ -76,38 +75,7 @@ function MediaErrorPage({
             )}
 
             <CardFooter className="justify-between border-t border-border px-8 py-5 text-sm text-muted-foreground">
-              <div className="flex flex-col gap-3">
-                <span className="font-medium text-foreground">KomikHQ Media</span>
-                <div aria-label="Color theme" className="flex items-center gap-1">
-                  <Button
-                    aria-pressed="false"
-                    data-theme-choice="light"
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    Light
-                  </Button>
-                  <Button
-                    aria-pressed="true"
-                    data-theme-choice="system"
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    System
-                  </Button>
-                  <Button
-                    aria-pressed="false"
-                    data-theme-choice="dark"
-                    size="sm"
-                    type="button"
-                    variant="ghost"
-                  >
-                    Dark
-                  </Button>
-                </div>
-              </div>
+              <span className="font-medium text-foreground">KomikHQ Media</span>
               <span>Press D to toggle</span>
             </CardFooter>
           </Card>
