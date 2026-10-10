@@ -1,8 +1,8 @@
 <div align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/komikhq/media/main/apps/pages/public/logo-wordmark-light.svg">
-    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/komikhq/media/main/apps/pages/public/logo-wordmark-dark.svg">
-    <img src="https://raw.githubusercontent.com/komikhq/media/main/apps/pages/public/logo-wordmark-dark.svg" alt="KomikHQ Media" width="320">
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/komikhq/media/main/apps/pages/public/logo-wordmark-dark.svg">
+    <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/komikhq/media/main/apps/pages/public/logo-wordmark-light.svg">
+    <img src="https://raw.githubusercontent.com/komikhq/media/main/apps/pages/public/logo-wordmark-light.svg" alt="KomikHQ Media" width="320">
   </picture>
   <h3>Every panel, delivered.</h3>
   <p>A shared, read-only media layer for the KomikHQ universe.</p>
