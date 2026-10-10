@@ -90,9 +90,21 @@ export function ThemeProvider({
       const restoreTransitions = disableTransitionOnChange
         ? disableTransitionsTemporarily()
         : undefined;
+      const favicon = document.querySelector<HTMLLinkElement>(
+        'link[rel="icon"]',
+      );
 
       root.classList.remove("light", "dark");
       root.classList.add(resolvedTheme);
+      if (favicon) {
+        const themeIcon =
+          resolvedTheme === "dark"
+            ? favicon.dataset.darkThemeIcon
+            : favicon.dataset.lightThemeIcon;
+        if (themeIcon) {
+          favicon.href = themeIcon;
+        }
+      }
       restoreTransitions?.();
     },
     [disableTransitionOnChange],
