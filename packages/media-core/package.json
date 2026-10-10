@@ -11,9 +11,9 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "build": "tsc -p tsconfig.json"
+    "build": "pnpm --filter @komikhq/ui build && tsc -p tsconfig.json"
   },
   "dependencies": {
-    "lucide": "1.54.0"
+    "@komikhq/ui": "workspace:*"
   }
 }

@@ -83,7 +83,7 @@ Choose either runtime—or deploy both. They use the same request handling and R
   </tr>
 </table>
 
-The error page includes Lucide icons, follows the visitor's light/dark preference, and shows the Cloudflare Ray ID when available. It handles application-level delivery errors; Cloudflare edge or platform errors that occur before the app runs need separate Cloudflare error-page configuration.
+Browser error pages are server-rendered with React and the shared shadcn UI package, including its theme tokens and light/dark colors. They show the Cloudflare request ID when available. The page handles application-level delivery errors; Cloudflare edge or platform errors that occur before the app runs need separate Cloudflare error-page configuration.
 
 ## Workspace map
 

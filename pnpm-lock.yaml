@@ -233,9 +233,9 @@ importers:
 
   packages/media-core:
     dependencies:
-      lucide:
-        specifier: 1.54.0
-        version: 1.54.0
+      '@komikhq/ui':
+        specifier: workspace:*
+        version: link:../ui
 
   packages/ui:
     dependencies:
@@ -288,6 +288,9 @@ importers:
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
+      vite:
+        specifier: ^8.3.4
+        version: 8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)
 
 packages:
 
@@ -2576,9 +2579,6 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
-
-  lucide@1.54.0:
-    resolution: {integrity: sha512-2N2brA+7NYLDlxG2QNcmGej5Qhw3pYMPN9MLktTNkQfs7Sk/2g2e8s0CUWibLz5lPVKMYesxm+k/ndDB7E1JjQ==}
 
   magic-string@0.30.21:
     resolution: {integrity: sha512-vd2F4YUyEXKGcLHoq+TEyCjxueSeHnFxyyjNp80yg0XV4vUhnDer/lvvlqM/arB5bXQN5K2/3oinyCRyx8T2CQ==}
@@ -5367,8 +5367,6 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
-
-  lucide@1.54.0: {}
 
   magic-string@0.30.21:
     dependencies:
