@@ -60,41 +60,17 @@ The Pages command uses the base binding configuration for local development; Pag
 
 ## 4. Deploy Cloudflare Pages
 
-Pages Functions run inside a Cloudflare Pages project. Create/select the Pages project in Cloudflare first. The Dashboard-managed binding option leaves the tracked Wrangler file local-only; the generated-config option requires Pages Build System V2 or later and makes the generated Wrangler file the source of truth for fields it defines.
+Pages Functions run inside a Cloudflare Pages project. Create/select the Pages project in Cloudflare first. Pages deployment configuration is managed fully in the Dashboard; this repository intentionally does not include a `wrangler.jsonc` Pages deployment config. That prevents Pages Git integration from discovering a shared config and makes each project's settings and R2 binding independent.
 
-Choose one configuration method for each Pages project:
-
-### Option A: Dashboard-managed binding (recommended for many projects)
-
-The tracked [Pages Wrangler config](./apps/pages/wrangler.jsonc) intentionally omits `pages_build_output_dir`, so it is used for local development only. In the Pages project Dashboard, add the `MEDIA_BUCKET` R2 binding separately for **Production** and **Preview**. This lets multiple Pages projects use the same Git repository while binding each project to its own bucket. Do not add `pages_build_output_dir` to the tracked file when using this option; that opts the project into Wrangler-managed deployment configuration.
-
-Keep the Pages project build settings at **Root directory** `apps/pages`, **Build output directory** `public`, and use the normal build command:
+In **Settings → Builds & deployments**, set **Root directory** to `apps/pages`, **Build output directory** to `public`, and use this build command:
 
 ```sh
 pnpm --filter @komikhq/media-core build && pnpm --filter @komikhq/pages build
 ```
 
-### Option B: Wrangler-config-managed binding
+In **Settings → Functions**, configure the compatibility date/flags. In **Settings → Bindings**, add an R2 binding named `MEDIA_BUCKET` separately for **Production** and **Preview**, selecting the bucket intended for that Pages project. Configure any other runtime bindings, variables, and secrets there too. Repeat the settings for each Pages project connected to this repository.
 
-Use this when you want the project configuration and bucket names generated from build variables rather than entered as Dashboard bindings. Set these build variables separately in each Pages project:
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `DEPLOY_PAGES_PROJECT_NAME` | No | Overrides the project name from the tracked config |
-| `DEPLOY_R2_BUCKET_NAME` | Yes | Production R2 bucket |
-| `DEPLOY_R2_PREVIEW_BUCKET_NAME` | Yes | Preview R2 bucket; keep separate from production unless sharing is intentional |
-
-Use this Pages **Build command**:
-
-```sh
-pnpm --filter @komikhq/pages generate:deploy-config && pnpm --filter @komikhq/media-core build && pnpm --filter @komikhq/pages build
-```
-
-The generator writes the Pages deployment configuration into `apps/pages/wrangler.jsonc` in that build checkout before Pages processes the deployment. Pages does not provide a reliable project-name build variable, and `CF_PAGES_URL` is a deployment URL that may contain a random deployment hostname, so the generator does not use it for project-name detection. It uses `DEPLOY_PAGES_PROJECT_NAME` when set; otherwise it keeps the name from the tracked config and prints a warning. The generated config includes `pages_build_output_dir`, the project name, and production/preview bindings; Wrangler config becomes the source of truth for those settings. The rewrite only happens in the Cloudflare build checkout and must not be committed to Git. Configure the bucket variables in both Pages build environments so the generation step has the values it needs.
-
-Do **not** use `--config` with `wrangler pages deploy`: Wrangler 4.149.0's Pages deploy command does not accept that flag. For Pages Git integration, use the generated standard `wrangler.jsonc` as above; the Wrangler CLI discovers it automatically. The Worker CLI command is different and does accept `--config`.
-
-Do not combine this option with Dashboard-managed `MEDIA_BUCKET` bindings. Choose Dashboard bindings **or** the generated Wrangler config as the source of truth for the Pages project.
+`apps/pages/wrangler.local.jsonc` is only used to generate local TypeScript binding declarations. Its non-standard name keeps Pages Git integration from auto-discovering it as the project's deployment config. Local development uses Wrangler CLI flags to bind a local R2 simulation; Cloudflare Dashboard bindings are not automatically available on a developer machine.
 
 ### Deploy Pages manually with Wrangler
 
@@ -118,7 +94,7 @@ pnpm deploy:pages:preview
 
 This script uses branch name `preview`. If your Pages project uses another branch, either change that branch in [the Pages package scripts](./apps/pages/package.json) or run the explicit `wrangler pages deploy public --branch <preview-branch>` command shown above.
 
-When using Wrangler-managed config for a manual deployment, run the generator first in the same build checkout with the variables above. Pages selects its `env.production` or `env.preview` override according to whether the deployment branch is the configured production branch or a preview branch. Preview branch settings are configured in the Pages project; the `--branch` flag identifies the branch, it does not create that Pages project or its branch policy.
+The `--branch` flag identifies the branch, it does not create the Pages project or its branch policy. Wrangler CLI deployments use the settings configured for the Pages project in the Dashboard.
 
 ## 5. Deploy the standalone Worker
 
@@ -166,7 +142,7 @@ You can connect the same GitHub repository to a Pages project and a separate Wor
    - **Build command**: use the Dashboard-managed or generated-config command in Section 4
    - **Build output directory**: `public`
    - **Framework preset**: none
-4. Choose either the Dashboard-managed binding method or generated Wrangler-config method described in Section 4. Build System V2 or later is required for the generated-config method. Do not set a shared production bucket in the tracked Pages config.
+4. Configure the Pages project entirely in the Dashboard as described in Section 4; there is no Pages deployment Wrangler config in the repository.
 5. Save and deploy. Pushes to the production branch create production deployments; other enabled branches and pull requests create Pages previews. Configure **Settings** > **Builds & deployments** > **Branch control** to choose which branches may create previews.
 
 The build command compiles the shared workspace package and verifies the Pages Functions bundle. The Functions files stay in `apps/pages/functions`, while `public` is the Pages assets output directory. Keep the entire repository available to the build; the shared package and pnpm workspace files are outside the Pages root directory.

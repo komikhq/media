@@ -42,9 +42,9 @@
       // The binding name consumed by the Worker source code.
       "binding": "MEDIA_BUCKET",
       // The remote bucket used by production deployments; replace for your account.
-      "bucket_name": "komikhq-media",
+      "bucket_name": "replace-with-production-r2-bucket",
       // The local R2 simulation name used during local development.
-      "preview_bucket_name": "komikhq-media-preview",
+      "preview_bucket_name": "local-media-production-simulation",
       // Keep Wrangler development on its local R2 simulation.
       "remote": false
     }
@@ -57,7 +57,7 @@
         // Match the binding name referenced by the Worker code.
         "binding": "MEDIA_BUCKET",
         // The R2 bucket used by Workers Builds Previews; replace for your account.
-        "bucket_name": "komikhq-media-preview",
+        "bucket_name": "local-media-preview-simulation",
       }
     ],
     // Enable Workers Cache for branch previews as well.
