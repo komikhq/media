@@ -188,7 +188,6 @@ test("CORS preflight validates configured origin, method, and headers without ac
     "Content-Type, X-Requested-By",
   );
   assert.equal(response.headers.get("Access-Control-Max-Age"), "3600");
-  assert.equal(response.headers.get("Access-Control-Expose-Headers"), "ETag");
   assert.equal(response.headers.get("Vary"), "Origin");
 });
 

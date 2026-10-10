@@ -162,6 +162,12 @@ function parseCorsPolicy(policyJson: string | undefined): CorsRule[] {
 }
 
 function originMatches(pattern: string, origin: string): boolean {
+  const validOrigin =
+    origin === "null" ||
+    (!origin.includes("*") && isValidOriginPattern(origin));
+  if (!validOrigin) {
+    return false;
+  }
   if (pattern === "*") {
     return true;
   }

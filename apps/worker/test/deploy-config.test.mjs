@@ -17,8 +17,10 @@ test("Worker deploy config uses project-specific names and R2 buckets", () => {
 
   assert.equal(generated.name, "media-catalog-a");
   assert.equal(generated.r2_buckets[0].bucket_name, "catalog-a");
+  assert.equal(generated.vars.CORS_POLICY, "[]");
   assert.equal(generated.previews.r2_buckets[0].bucket_name, "catalog-a-preview");
   assert.equal(generated.env.preview.name, "media-catalog-a-preview");
+  assert.equal(generated.env.preview.vars.CORS_POLICY, "[]");
   assert.equal(generated.env.preview.r2_buckets[0].bucket_name, "catalog-a-preview");
 });
 
