@@ -22,9 +22,14 @@ test("Worker deploy config uses project-specific names and R2 buckets", () => {
   assert.equal(generated.env.preview.r2_buckets[0].bucket_name, "catalog-a-preview");
 });
 
-test("Worker deploy config fails when deployment variables are missing", () => {
-  assert.throws(
-    () => buildDeployConfig(source, {}),
-    /Missing required deployment variable DEPLOY_WORKER_NAME/,
+test("Worker deploy config uses the template name when no project name is provided", () => {
+  const generated = parse(
+    buildDeployConfig(source, {
+      DEPLOY_R2_BUCKET_NAME: "catalog-a",
+      DEPLOY_R2_PREVIEW_BUCKET_NAME: "catalog-a-preview",
+    }),
   );
+
+  assert.equal(generated.name, "komikhq-media-worker");
+  assert.equal(generated.env.preview.name, "komikhq-media-worker-preview");
 });

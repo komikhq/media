@@ -80,7 +80,7 @@ Use this when you want the project configuration and bucket names generated from
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DEPLOY_PAGES_PROJECT_NAME` | Yes | Must match the Pages project name |
+| `DEPLOY_PAGES_PROJECT_NAME` | No | Overrides the project name from the tracked config |
 | `DEPLOY_R2_BUCKET_NAME` | Yes | Production R2 bucket |
 | `DEPLOY_R2_PREVIEW_BUCKET_NAME` | Yes | Preview R2 bucket; keep separate from production unless sharing is intentional |
 
@@ -90,7 +90,7 @@ Use this Pages **Build command**:
 pnpm --filter @komikhq/pages generate:deploy-config && pnpm --filter @komikhq/media-core build && pnpm --filter @komikhq/pages build
 ```
 
-The generator writes the Pages deployment configuration into `apps/pages/wrangler.jsonc` in that build checkout before Pages processes the deployment. The generated config includes `pages_build_output_dir`, the project name, and production/preview bindings; Wrangler config becomes the source of truth for those settings. The rewrite only happens in the Cloudflare build checkout and must not be committed to Git. Configure variables in both Pages build environments so the generation step has access to the values it needs.
+The generator writes the Pages deployment configuration into `apps/pages/wrangler.jsonc` in that build checkout before Pages processes the deployment. Pages does not provide a reliable project-name build variable, and `CF_PAGES_URL` is a deployment URL that may contain a random deployment hostname, so the generator does not use it for project-name detection. It uses `DEPLOY_PAGES_PROJECT_NAME` when set; otherwise it keeps the name from the tracked config and prints a warning. The generated config includes `pages_build_output_dir`, the project name, and production/preview bindings; Wrangler config becomes the source of truth for those settings. The rewrite only happens in the Cloudflare build checkout and must not be committed to Git. Configure the bucket variables in both Pages build environments so the generation step has the values it needs.
 
 Do **not** use `--config` with `wrangler pages deploy`: Wrangler 4.149.0's Pages deploy command does not accept that flag. For Pages Git integration, use the generated standard `wrangler.jsonc` as above; the Wrangler CLI discovers it automatically. The Worker CLI command is different and does accept `--config`.
 
@@ -128,10 +128,12 @@ Set these variables for each Worker project:
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `DEPLOY_WORKER_NAME` | Yes | Production Worker name; must match the Cloudflare Worker project |
+| `DEPLOY_WORKER_NAME` | No | Production Worker name; set per project when the tracked default name does not match |
 | `DEPLOY_R2_BUCKET_NAME` | Yes | Production R2 bucket |
 | `DEPLOY_R2_PREVIEW_BUCKET_NAME` | Yes | Branch Preview and named preview R2 bucket; keep separate from production unless sharing is intentional |
-| `DEPLOY_WORKER_PREVIEW_NAME` | No | Named preview Worker name; defaults to `<DEPLOY_WORKER_NAME>-preview` |
+| `DEPLOY_WORKER_PREVIEW_NAME` | No | Named preview Worker name; defaults to `<Worker name>-preview` |
+
+Wrangler requires a Worker `name`, and Workers Builds does not document a build variable from which the target name can be detected. If `DEPLOY_WORKER_NAME` is omitted, the generator retains `name` from the tracked config (`komikhq-media-worker`) and prints a warning; separate Worker projects should set `DEPLOY_WORKER_NAME` to avoid targeting the same Worker. `DEPLOY_WORKER_PREVIEW_NAME` is optional and defaults to `<Worker name>-preview`.
 
 For Workers Builds, keep the Worker root directory at `apps/worker`, build with the existing shared-package build step, and set the **Deploy command** to `pnpm run deploy`. That command generates the per-project config and deploys production. Branch previews use the Worker Builds Preview workflow and the generated preview bucket binding. The separate manual `pnpm deploy:worker:preview` command deploys the named `env.preview` Worker using the same generated config.
 

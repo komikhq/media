@@ -63,7 +63,7 @@ export function buildDeployConfig(
   env: DeployEnvironment,
 ): string {
   const config = parseConfig(source);
-  const name = requiredEnv(env, "DEPLOY_WORKER_NAME");
+  const name = env.DEPLOY_WORKER_NAME?.trim() || config.name;
   const productionBucket = requiredEnv(env, "DEPLOY_R2_BUCKET_NAME");
   const previewBucket = requiredEnv(env, "DEPLOY_R2_PREVIEW_BUCKET_NAME");
 
@@ -86,7 +86,8 @@ export function buildDeployConfig(
     "env.preview.r2_buckets",
     "MEDIA_BUCKET",
   ).bucket_name = previewBucket;
-  namedPreview.name = env.DEPLOY_WORKER_PREVIEW_NAME?.trim() || `${name}-preview`;
+  namedPreview.name =
+    env.DEPLOY_WORKER_PREVIEW_NAME?.trim() || `${name}-preview`;
 
   return `${JSON.stringify(config, null, 2)}\n`;
 }
@@ -95,6 +96,11 @@ async function main(): Promise<void> {
   const source = await readFile(configPath, "utf8");
   const output = buildDeployConfig(source, process.env);
   await writeFile(outputPath, output, "utf8");
+  if (!process.env.DEPLOY_WORKER_NAME?.trim()) {
+    console.warn(
+      "Workers Builds does not provide a documented project-name variable; using the name from apps/worker/wrangler.jsonc. Set DEPLOY_WORKER_NAME for each Worker project to avoid deploying to the same Worker name.",
+    );
+  }
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {

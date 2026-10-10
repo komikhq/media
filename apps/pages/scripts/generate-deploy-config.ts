@@ -65,7 +65,7 @@ export function buildDeployConfig(
   env: DeployEnvironment,
 ): string {
   const config = parseConfig(source);
-  const projectName = requiredEnv(env, "DEPLOY_PAGES_PROJECT_NAME");
+  const projectName = env.DEPLOY_PAGES_PROJECT_NAME?.trim() || config.name;
   const productionBucket = requiredEnv(env, "DEPLOY_R2_BUCKET_NAME");
   const previewBucket = requiredEnv(env, "DEPLOY_R2_PREVIEW_BUCKET_NAME");
 
@@ -82,6 +82,11 @@ async function main(): Promise<void> {
   const source = await readFile(configPath, "utf8");
   const output = buildDeployConfig(source, process.env);
   await writeFile(configPath, output, "utf8");
+  if (!process.env.DEPLOY_PAGES_PROJECT_NAME?.trim()) {
+    console.warn(
+      "Pages project name cannot be detected reliably; using the name from apps/pages/wrangler.jsonc. Set DEPLOY_PAGES_PROJECT_NAME if this is not the target project name.",
+    );
+  }
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
