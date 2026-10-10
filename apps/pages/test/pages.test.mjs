@@ -37,13 +37,23 @@ function makeBucket() {
 
 test("Pages root and catch-all use the shared R2 delivery behavior", async () => {
   const { bucket, calls } = makeBucket();
+  const corsPolicy = JSON.stringify([
+    {
+      AllowedOrigins: ["https://app.example.com"],
+      AllowedMethods: ["GET", "HEAD"],
+    },
+  ]);
   const root = await onRootRequest({
-    request: new Request("https://media.example/"),
-    env: { MEDIA_BUCKET: bucket },
+    request: new Request("https://media.example/", {
+      headers: { Origin: "https://app.example.com" },
+    }),
+    env: { MEDIA_BUCKET: bucket, CORS_POLICY: corsPolicy },
   });
   const image = await onCatchAllRequest({
-    request: new Request("https://media.example/chapters/ch1/page.webp"),
-    env: { MEDIA_BUCKET: bucket },
+    request: new Request("https://media.example/chapters/ch1/page.webp", {
+      headers: { Origin: "https://app.example.com" },
+    }),
+    env: { MEDIA_BUCKET: bucket, CORS_POLICY: corsPolicy },
   });
 
   assert.deepEqual(calls, [
@@ -52,7 +62,9 @@ test("Pages root and catch-all use the shared R2 delivery behavior", async () =>
   ]);
   assert.equal(root.status, 200);
   assert.equal(await root.text(), "page image");
+  assert.equal(root.headers.get("Access-Control-Allow-Origin"), "https://app.example.com");
   assert.equal(image.headers.get("ETag"), '"pages-etag"');
+  assert.equal(image.headers.get("Access-Control-Allow-Origin"), "https://app.example.com");
   assert.equal(
     image.headers.get("Cache-Control"),
     "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",

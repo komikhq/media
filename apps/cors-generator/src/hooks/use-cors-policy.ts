@@ -19,14 +19,15 @@ const INITIAL_DRAFT: CorsPolicyDraft = {
 export function useCorsPolicy() {
   const [draft, setDraft] = useState(INITIAL_DRAFT);
   const [feedback, setFeedback] = useState("");
+  const [minify, setMinify] = useState(false);
 
   const validationError = useMemo(() => validateDraft(draft), [draft]);
   const policyJson = useMemo(
     () =>
       validationError
         ? ""
-        : serializePolicy(createPolicy(draft)),
-    [draft, validationError],
+        : serializePolicy(createPolicy(draft), minify),
+    [draft, minify, validationError],
   );
 
   function updateDraft<Key extends keyof CorsPolicyDraft>(
@@ -46,13 +47,20 @@ export function useCorsPolicy() {
     updateDraft("methods", methods);
   }
 
+  function updateMinify(value: boolean) {
+    setMinify(value);
+    setFeedback("");
+  }
+
   return {
     draft,
     feedback,
+    minify,
     policyJson,
     setFeedback,
     toggleMethod,
     updateDraft,
+    updateMinify,
     validationError,
   };
 }

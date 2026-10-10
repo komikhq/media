@@ -1,3 +1,4 @@
+import { Checkbox } from "@komikhq/ui/components/checkbox";
 import { Button } from "@komikhq/ui/components/button";
 import {
   Card,
@@ -8,21 +9,26 @@ import {
   CardTitle,
 } from "@komikhq/ui/components/card";
 import { Textarea } from "@komikhq/ui/components/textarea";
+import { Label } from "@komikhq/ui/components/label";
 
 interface CorsPolicyPreviewProps {
   policyJson: string;
   validationError?: string;
   feedback: string;
+  minify: boolean;
   onCopy: () => void;
   onDownload: () => void;
+  onMinifyChange: (minify: boolean) => void;
 }
 
 export function CorsPolicyPreview({
   policyJson,
   validationError,
   feedback,
+  minify,
   onCopy,
   onDownload,
+  onMinifyChange,
 }: CorsPolicyPreviewProps) {
   return (
     <Card
@@ -39,6 +45,17 @@ export function CorsPolicyPreview({
       </CardHeader>
 
       <CardContent className="grid gap-4">
+        <Label
+          htmlFor="minify-policy"
+          className="flex w-fit cursor-pointer items-center gap-2 text-sm"
+        >
+          <Checkbox
+            id="minify-policy"
+            checked={minify}
+            onCheckedChange={(checked) => onMinifyChange(checked === true)}
+          />
+          Minify JSON
+        </Label>
         <Textarea
           aria-label="Generated CORS policy JSON"
           aria-invalid={Boolean(validationError)}
@@ -51,7 +68,7 @@ export function CorsPolicyPreview({
 
         <div className="flex flex-wrap gap-3">
           <Button onClick={onCopy} disabled={!policyJson}>
-            Copy JSON
+            Copy to clipboard
           </Button>
           <Button
             variant="outline"

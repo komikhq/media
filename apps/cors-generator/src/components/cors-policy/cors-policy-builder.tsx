@@ -6,10 +6,12 @@ export function CorsPolicyBuilder() {
   const {
     draft,
     feedback,
+    minify,
     policyJson,
     setFeedback,
     toggleMethod,
     updateDraft,
+    updateMinify,
     validationError,
   } = useCorsPolicy();
 
@@ -45,8 +47,10 @@ export function CorsPolicyBuilder() {
         policyJson={policyJson}
         validationError={validationError}
         feedback={feedback}
+        minify={minify}
         onCopy={copyPolicy}
         onDownload={downloadPolicy}
+        onMinifyChange={updateMinify}
       />
     </div>
   );

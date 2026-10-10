@@ -35,6 +35,14 @@ test("creates a JSON policy compatible with the R2 policy shape", () => {
   assert.deepEqual(JSON.parse(serializePolicy(policy)), [policy]);
 });
 
+test("serializes the policy as compact JSON when minification is enabled", () => {
+  const policy = createPolicy(validDraft);
+
+  assert.equal(serializePolicy(policy, true), JSON.stringify([policy]));
+  assert.match(serializePolicy(policy, false), /\n/u);
+  assert.doesNotMatch(serializePolicy(policy, true), /\n/u);
+});
+
 test("reports missing origins and methods", () => {
   assert.match(
     validateDraft({ ...validDraft, origins: "" }) ?? "",

@@ -17,6 +17,10 @@
   "workers_dev": true,
   // Enable per-version workers.dev URLs for testing deployed versions.
   "preview_urls": true,
+  // Set CORS rules as a JSON string; configure independently per deployment environment.
+  "vars": {
+    "CORS_POLICY": "[]"
+  },
   // Enable Workers Cache; responses are cached according to their Cache-Control headers.
   "cache": {
     "enabled": true
@@ -70,6 +74,9 @@
     "preview": {
       // The Cloudflare Worker name created for this named environment.
       "name": "komikhq-media-worker-preview",
+      "vars": {
+        "CORS_POLICY": "[]"
+      },
       // Bind the named environment to its own preview R2 bucket.
       "r2_buckets": [
         {

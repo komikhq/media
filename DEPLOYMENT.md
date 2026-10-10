@@ -58,6 +58,42 @@ pnpm dev:worker:preview
 
 The Pages command uses the base binding configuration for local development; Pages `env.preview` and `env.production` are deployment configuration overrides. Keep local test data non-sensitive. Wrangler state is ignored by Git.
 
+## Configure CORS
+
+Pages Functions and the standalone Worker apply CORS from the `CORS_POLICY`
+runtime variable using the same R2-style JSON array format. This variable is a
+plain string, not a secret. The default value `[]` disables CORS headers.
+Configure it with a value such as:
+
+```json
+[{"AllowedOrigins":["https://app.example.com"],"AllowedMethods":["GET","HEAD"],"AllowedHeaders":["Authorization","Content-Type"],"ExposeHeaders":["ETag","Last-Modified","Content-Length"],"MaxAgeSeconds":3600}]
+```
+
+For Pages, add `CORS_POLICY` under **Settings → Bindings → Variables and
+Secrets** for both Preview and Production, using the appropriate policy for
+each environment. The Pages Wrangler file in this repository is only for local
+type generation; it does not configure deployed Pages settings.
+
+For the Worker, set `vars.CORS_POLICY` in
+[apps/worker/wrangler.jsonc](./apps/worker/wrangler.jsonc), including
+`env.preview.vars` for the named preview environment. Workers Builds branch
+Previews use the top-level policy. The deploy-config generator preserves these
+values.
+
+Use the R2 fields `AllowedOrigins`, `AllowedMethods`, `AllowedHeaders`,
+`ExposeHeaders`, and `MaxAgeSeconds`. This media endpoint supports only `GET`
+and `HEAD`; other methods remain unsupported regardless of policy. Allowed
+origins support exact values, `*`, and a single hostname wildcard such as
+`https://*.example.com`. The handler validates the JSON and returns a
+non-cacheable 500 with an error log if the policy is malformed. Allowed
+preflight requests return 204; disallowed preflights return 403. CORS is a
+browser access policy, not authentication or authorization.
+
+This setting is independent from the R2 bucket's own CORS rules: requests go
+through the Pages Function or Worker, and the shared handler adds CORS headers
+to its responses. Configure this variable on each deployment target that
+serves the media.
+
 ## 4. Deploy Cloudflare Pages
 
 Pages Functions run inside a Cloudflare Pages project. Create/select the Pages project in Cloudflare first. Pages deployment configuration is managed fully in the Dashboard; this repository intentionally does not include a `wrangler.jsonc` Pages deployment config. That prevents Pages Git integration from discovering a shared config and makes each project's settings and R2 binding independent.

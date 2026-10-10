@@ -2,6 +2,9 @@
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "komikhq-media-pages",
   "compatibility_date": "2026-10-09",
+  "vars": {
+    "CORS_POLICY": "[]"
+  },
   "r2_buckets": [
     {
       "binding": "MEDIA_BUCKET",
@@ -10,6 +13,9 @@
   ],
   "env": {
     "preview": {
+      "vars": {
+        "CORS_POLICY": "[]"
+      },
       "r2_buckets": [
         {
           "binding": "MEDIA_BUCKET",
@@ -18,6 +24,9 @@
       ]
     },
     "production": {
+      "vars": {
+        "CORS_POLICY": "[]"
+      },
       "r2_buckets": [
         {
           "binding": "MEDIA_BUCKET",

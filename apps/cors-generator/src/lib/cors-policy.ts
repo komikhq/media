@@ -64,6 +64,6 @@ export function createPolicy(draft: CorsPolicyDraft): CorsPolicy {
   };
 }
 
-export function serializePolicy(policy: CorsPolicy): string {
-  return JSON.stringify([policy], null, 2);
+export function serializePolicy(policy: CorsPolicy, minify = false): string {
+  return minify ? JSON.stringify([policy]) : JSON.stringify([policy], null, 2);
 }

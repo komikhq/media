@@ -118,6 +118,172 @@ test("unsupported methods return 405 with Allow and never access R2", async () =
   assert.equal(response.headers.get("Cache-Control"), "no-store");
 });
 
+test("CORS policy adds configured headers to allowed object responses", async () => {
+  const response = await handleMediaRequest(
+    new Request("https://media.example/cover.webp", {
+      headers: { Origin: "https://app.example.com" },
+    }),
+    {
+      async get() {
+        return makeObject();
+      },
+      async head() {
+        return null;
+      },
+    },
+    JSON.stringify([
+      {
+        AllowedOrigins: ["https://app.example.com"],
+        AllowedMethods: ["GET", "HEAD"],
+        ExposeHeaders: ["ETag", "Content-Length"],
+      },
+    ]),
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://app.example.com");
+  assert.equal(response.headers.get("Access-Control-Expose-Headers"), "ETag, Content-Length");
+  assert.equal(response.headers.get("Vary"), "Origin");
+});
+
+test("CORS preflight validates configured origin, method, and headers without accessing R2", async () => {
+  const bucket = {
+    async get() {
+      assert.fail("preflight must not access R2");
+    },
+    async head() {
+      assert.fail("preflight must not access R2");
+    },
+  };
+  const policy = JSON.stringify([
+    {
+      AllowedOrigins: ["https://*.example.com"],
+      AllowedMethods: ["GET", "HEAD"],
+      AllowedHeaders: ["Content-Type", "X-Requested-By"],
+      ExposeHeaders: ["ETag"],
+      MaxAgeSeconds: 3600,
+    },
+  ]);
+  const response = await handleMediaRequest(
+    new Request("https://media.example/cover.webp", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://reader.app.example.com",
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "content-type, x-requested-by",
+      },
+    }),
+    bucket,
+    policy,
+  );
+
+  assert.equal(response.status, 204);
+  assert.equal(
+    response.headers.get("Access-Control-Allow-Origin"),
+    "https://reader.app.example.com",
+  );
+  assert.equal(response.headers.get("Access-Control-Allow-Methods"), "GET, HEAD");
+  assert.equal(
+    response.headers.get("Access-Control-Allow-Headers"),
+    "Content-Type, X-Requested-By",
+  );
+  assert.equal(response.headers.get("Access-Control-Max-Age"), "3600");
+  assert.equal(response.headers.get("Access-Control-Expose-Headers"), "ETag");
+  assert.equal(response.headers.get("Vary"), "Origin");
+});
+
+test("CORS rejects origins, methods, and headers outside the policy", async () => {
+  const bucket = {
+    async get() {
+      assert.fail("preflight must not access R2");
+    },
+    async head() {
+      assert.fail("preflight must not access R2");
+    },
+  };
+  const policy = JSON.stringify([
+    {
+      AllowedOrigins: ["https://app.example.com"],
+      AllowedMethods: ["GET"],
+      AllowedHeaders: ["Content-Type"],
+    },
+  ]);
+
+  for (const [origin, method, headers] of [
+    ["https://other.example.com", "GET", ""],
+    ["https://app.example.com", "HEAD", ""],
+    ["https://app.example.com", "GET", "authorization"],
+  ]) {
+    const response = await handleMediaRequest(
+      new Request("https://media.example/cover.webp", {
+        method: "OPTIONS",
+        headers: {
+          Origin: origin,
+          "Access-Control-Request-Method": method,
+          ...(headers ? { "Access-Control-Request-Headers": headers } : {}),
+        },
+      }),
+      bucket,
+      policy,
+    );
+    assert.equal(response.status, 403);
+    assert.equal(response.headers.get("Access-Control-Allow-Origin"), null);
+  }
+});
+
+test("CORS applies to error responses only when the request matches the policy", async () => {
+  const response = await handleMediaRequest(
+    new Request("https://media.example/missing.webp", {
+      headers: { Origin: "https://app.example.com" },
+    }),
+    {
+      async get() {
+        return null;
+      },
+      async head() {
+        return null;
+      },
+    },
+    JSON.stringify([
+      {
+        AllowedOrigins: ["*"],
+        AllowedMethods: ["GET"],
+      },
+    ]),
+  );
+
+  assert.equal(response.status, 404);
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), "*");
+  assert.equal(response.headers.get("Vary"), null);
+});
+
+test("invalid CORS configuration returns a logged non-cacheable 500", async () => {
+  const originalConsoleError = console.error;
+  const logs = [];
+  console.error = (...args) => logs.push(args);
+  try {
+    const response = await handleMediaRequest(
+      new Request("https://media.example/cover.webp"),
+      {
+        async get() {
+          assert.fail("invalid policy must not access R2");
+        },
+        async head() {
+          assert.fail("invalid policy must not access R2");
+        },
+      },
+      '{"AllowedOrigins":',
+    );
+
+    assert.equal(response.status, 500);
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+    assert.equal(logs.length, 1);
+    assert.equal(logs[0][0], "Invalid media CORS policy");
+  } finally {
+    console.error = originalConsoleError;
+  }
+});
+
 test("browser errors return the branded HTML page with a safe Ray ID", async () => {
   const response = await handleMediaRequest(
     new Request("https://media.example/not-found.webp", {

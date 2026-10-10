@@ -75,6 +75,12 @@ Choose either runtime—or deploy both. They use the same request handling and R
       Browser requests that accept HTML get a responsive, branded error page; other clients receive JSON. Errors are not cached as successful media.
     </td>
   </tr>
+  <tr>
+    <td colspan="2">
+      <h3>🌐 Configurable CORS</h3>
+      Pages and Workers share an R2-style JSON policy configured through the <code>CORS_POLICY</code> runtime variable.
+    </td>
+  </tr>
 </table>
 
 The error page includes Lucide icons, follows the visitor's light/dark preference, and shows the Cloudflare Ray ID when available. It handles application-level delivery errors; Cloudflare edge or platform errors that occur before the app runs need separate Cloudflare error-page configuration.

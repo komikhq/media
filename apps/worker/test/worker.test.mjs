@@ -20,8 +20,16 @@ test("standalone Worker uses the shared R2 delivery behavior", async () => {
   };
 
   const response = await worker.fetch(
-    new Request("https://media.example/chapter/page.webp"),
+    new Request("https://media.example/chapter/page.webp", {
+      headers: { Origin: "https://app.example.com" },
+    }),
     {
+      CORS_POLICY: JSON.stringify([
+        {
+          AllowedOrigins: ["https://app.example.com"],
+          AllowedMethods: ["GET", "HEAD"],
+        },
+      ]),
       MEDIA_BUCKET: {
         async get(key) {
           calls.push(["get", key]);
@@ -38,6 +46,7 @@ test("standalone Worker uses the shared R2 delivery behavior", async () => {
   assert.deepEqual(calls, [["get", "chapter/page.webp"]]);
   assert.equal(response.status, 200);
   assert.equal(await response.text(), "worker image");
+  assert.equal(response.headers.get("Access-Control-Allow-Origin"), "https://app.example.com");
   assert.equal(response.headers.get("ETag"), '"worker-etag"');
   assert.equal(
     response.headers.get("Cache-Control"),
