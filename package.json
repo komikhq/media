@@ -16,7 +16,8 @@
     "deploy:pages": "pnpm --filter @komikhq/pages run deploy",
     "deploy:pages:preview": "pnpm --filter @komikhq/pages run deploy:preview",
     "deploy:worker": "pnpm --filter @komikhq/worker run deploy",
-    "deploy:worker:preview": "pnpm --filter @komikhq/worker run deploy:preview"
+    "deploy:worker:preview": "pnpm --filter @komikhq/worker run deploy:preview",
+    "shadcn": "shadcn"
   },
   "keywords": [],
   "author": "",
@@ -33,6 +34,7 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "jsonc-parser": "^3.3.1",
+    "shadcn": "^4.21.4",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "wrangler": "^4.149.0"
