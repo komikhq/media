@@ -83,11 +83,22 @@ The error page includes Lucide icons, follows the visitor's light/dark preferenc
 
 ```text
 apps/
+├── cors-generator/    React + Vite app for building CORS policies
 ├── pages/             Cloudflare Pages Functions and public brand assets
 └── worker/            Standalone Worker, static assets, and deploy tooling
 packages/
-└── media-core/        Shared R2 request and response behavior
+├── media-core/        Shared R2 request and response behavior
+└── ui/                Shared shadcn components, Radix-based preset, and styles
 ```
+
+The CORS generator is a static Vite app deployed to GitHub Pages by
+[`.github/workflows/deploy-cors-generator.yml`](./.github/workflows/deploy-cors-generator.yml).
+Its UI primitives live in `packages/ui` so the Pages and Worker error surfaces
+can reuse them. Add shared shadcn primitives with
+`pnpm shadcn add card --cwd packages/ui`, then import them from
+`@komikhq/ui/components/*`. Run the generator locally with
+`pnpm dev:cors-generator`; press **D** to toggle the template's light/dark
+appearance.
 
 ## Get started
 
@@ -128,6 +139,10 @@ Pages and the standalone Worker are separate deployment targets, each with its o
 | --- | --- | --- | --- |
 | **Pages** | `pnpm dev:pages` | `pnpm deploy:pages` | `pnpm deploy:pages:preview` |
 | **Worker** | `pnpm dev:worker` | `pnpm deploy:worker` | `pnpm deploy:worker:preview` |
+
+The CORS generator deploys separately through GitHub Actions. Enable GitHub Pages
+for the repository with **GitHub Actions** as its build and deployment source.
+The workflow sets the Vite base path to the repository name for project Pages URLs.
 
 Public media should use a KomikHQ-controlled custom hostname. Do not expose an R2 `r2.dev` URL or an R2 custom-domain endpoint as the public delivery URL.
 

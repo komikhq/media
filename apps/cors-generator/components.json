@@ -1,0 +1,23 @@
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "radix-luma",
+  "rsc": false,
+  "tsx": true,
+  "tailwind": {
+    "config": "",
+    "css": "../../packages/ui/src/styles/globals.css",
+    "baseColor": "neutral",
+    "cssVariables": true
+  },
+  "iconLibrary": "phosphor",
+  "aliases": {
+    "components": "@/components",
+    "utils": "@komikhq/ui/lib/utils",
+    "hooks": "@/hooks",
+    "lib": "@/lib",
+    "ui": "@komikhq/ui/components"
+  },
+  "rtl": false,
+  "menuColor": "default",
+  "menuAccent": "bold"
+}
