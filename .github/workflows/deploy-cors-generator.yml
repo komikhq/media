@@ -32,9 +32,25 @@ jobs:
           node-version: 24
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Validate site URL
+        env:
+          VITE_SITE_URL: ${{ vars.VITE_SITE_URL }}
+        run: |
+          node --input-type=module <<'NODE'
+          const value = process.env.VITE_SITE_URL;
+          if (!value) {
+            throw new Error("Set the VITE_SITE_URL repository Actions variable to the site's HTTPS origin.");
+          }
+
+          const url = new URL(value);
+          if (url.protocol !== "https:" || url.origin !== value) {
+            throw new Error("VITE_SITE_URL must be an HTTPS origin without a trailing slash or path.");
+          }
+          NODE
       - run: pnpm --filter @komikhq/cors-generator build
         env:
           VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || format('/{0}/', github.event.repository.name) }}
+          VITE_SITE_URL: ${{ vars.VITE_SITE_URL }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/cors-generator/dist

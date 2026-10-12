@@ -103,6 +103,10 @@ The build uses the repository Actions variable `VITE_BASE_PATH` when set; use
 `/` for a custom domain, or leave it unset to use the repository path (for
 example, `/media/`) on the default `github.io` URL. Updating this variable
 triggers the new base path only on the next deployment.
+Set the repository Actions variable `VITE_SITE_URL` to the site's HTTPS origin
+without a trailing slash or path. The build combines it with `VITE_BASE_PATH`
+to generate the canonical URL and absolute Open Graph/Twitter image URLs; the
+deployment fails validation if the variable is missing or invalid.
 Its UI primitives live in `packages/ui` so the Pages and Worker error surfaces
 can reuse them. Add shared shadcn primitives with
 `pnpm shadcn add card --cwd packages/ui`, then import them from
