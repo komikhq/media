@@ -34,7 +34,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @komikhq/cors-generator build
         env:
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          VITE_BASE_PATH: ${{ vars.VITE_BASE_PATH || format('/{0}/', github.event.repository.name) }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/cors-generator/dist

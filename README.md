@@ -99,6 +99,10 @@ packages/
 
 The CORS generator is a static Vite app deployed to GitHub Pages by
 [`.github/workflows/deploy-cors-generator.yml`](./.github/workflows/deploy-cors-generator.yml).
+The build uses the repository Actions variable `VITE_BASE_PATH` when set; use
+`/` for a custom domain, or leave it unset to use the repository path (for
+example, `/media/`) on the default `github.io` URL. Updating this variable
+triggers the new base path only on the next deployment.
 Its UI primitives live in `packages/ui` so the Pages and Worker error surfaces
 can reuse them. Add shared shadcn primitives with
 `pnpm shadcn add card --cwd packages/ui`, then import them from
